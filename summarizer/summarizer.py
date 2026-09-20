@@ -1,6 +1,11 @@
-"""Extractive text summarizer (baseline + TextRank stub)."""
+"""Extractive text summarizer (frequency baseline + TextRank)."""
 from collections import Counter
 from typing import List
+
+import networkx as nx
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 from .preprocessing import preprocess
 from .validation import validate_method, validate_num_sentences, validate_text
@@ -15,7 +20,7 @@ class TextSummarizer:
         text = validate_text(text)
         num_sentences = validate_num_sentences(num_sentences)
 
-        parsed = preprocess(text)
+        parsed = preprocess(text, include_headings=False)
         if len(parsed) <= num_sentences:
             return " ".join(s for s, _ in parsed)
 
@@ -46,6 +51,32 @@ class TextSummarizer:
 
     @staticmethod
     def _textrank_scores(parsed) -> List[float]:
-        # TODO (Day 4): TF-IDF vectors -> cosine similarity matrix
-        #               -> networkx.from_numpy_array -> nx.pagerank
-        raise NotImplementedError("TextRank is planned for Day 4.")
+        """Score sentences with TextRank.
+
+        TF-IDF vectors -> cosine similarity matrix -> similarity graph
+        -> PageRank. Returns all-zero scores (so the first sentences win
+        the tie) when there is nothing to compare.
+        """
+        n = len(parsed)
+        token_lists = [tokens for _, tokens in parsed]
+        if not any(token_lists):
+            return [0.0] * n
+
+        try:
+            # Tokens are already cleaned, so pass them through unchanged
+            vectorizer = TfidfVectorizer(analyzer=lambda tokens: tokens)
+            matrix = vectorizer.fit_transform(token_lists)
+        except ValueError:
+            return [0.0] * n  # empty vocabulary
+
+        sim = cosine_similarity(matrix)
+        np.fill_diagonal(sim, 0.0)  # a sentence should not vote for itself
+        if not sim.any():
+            return [0.0] * n  # no sentence shares a word with another
+
+        graph = nx.from_numpy_array(sim)
+        try:
+            ranks = nx.pagerank(graph, weight="weight")
+        except nx.PowerIterationFailedConvergence:
+            return [0.0] * n
+        return [float(ranks[i]) for i in range(n)]

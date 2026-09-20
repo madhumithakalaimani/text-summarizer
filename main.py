@@ -1,5 +1,6 @@
-"""Usage: python main.py <file-or-folder> [num_sentences]
+"""Usage: python main.py <file-or-folder> [num_sentences] [method]
 
+method is "frequency" (default) or "textrank".
 Supported inputs: .txt, .md, .csv, .json files, or a folder containing them.
 """
 import sys
@@ -7,7 +8,11 @@ from pathlib import Path
 
 from summarizer import TextSummarizer
 from summarizer.data_loader import DataLoadError, load_articles, load_directory
-from summarizer.validation import InvalidInputError, validate_num_sentences
+from summarizer.validation import (
+    InvalidInputError,
+    validate_method,
+    validate_num_sentences,
+)
 
 
 def main() -> None:
@@ -24,13 +29,20 @@ def main() -> None:
                 f"(got {sys.argv[2]!r})."
             )
 
+    method = "frequency"
+    if len(sys.argv) > 3:
+        try:
+            method = validate_method(sys.argv[3])
+        except InvalidInputError as error:
+            sys.exit(f"Error: {error}")
+
     path = Path(sys.argv[1])
     try:
         articles = load_directory(path) if path.is_dir() else load_articles(path)
     except (FileNotFoundError, DataLoadError) as error:
         sys.exit(f"Error: {error}")
 
-    summarizer = TextSummarizer()
+    summarizer = TextSummarizer(method=method)
     multiple = len(articles) > 1
     failed = 0
     for article in articles:
