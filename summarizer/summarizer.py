@@ -10,6 +10,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 from .preprocessing import preprocess
 from .validation import validate_method, validate_num_sentences, validate_text
 
+# TextRank settings (PageRank damping factor and convergence limits)
+TEXTRANK_DAMPING = 0.85
+TEXTRANK_MAX_ITER = 100
+TEXTRANK_TOLERANCE = 1e-6
+
 
 class TextSummarizer:
     def __init__(self, method: str = "frequency"):
@@ -54,8 +59,10 @@ class TextSummarizer:
         """Score sentences with TextRank.
 
         TF-IDF vectors -> cosine similarity matrix -> similarity graph
-        -> PageRank. Returns all-zero scores (so the first sentences win
-        the tie) when there is nothing to compare.
+        (one node per sentence, edge weight = similarity) -> PageRank
+        with damping factor 0.85. Scores sum to 1. Returns all-zero scores
+        (so the first sentences win the tie) when there is nothing to
+        compare or PageRank does not converge.
         """
         n = len(parsed)
         token_lists = [tokens for _, tokens in parsed]
@@ -76,7 +83,13 @@ class TextSummarizer:
 
         graph = nx.from_numpy_array(sim)
         try:
-            ranks = nx.pagerank(graph, weight="weight")
+            ranks = nx.pagerank(
+                graph,
+                alpha=TEXTRANK_DAMPING,
+                max_iter=TEXTRANK_MAX_ITER,
+                tol=TEXTRANK_TOLERANCE,
+                weight="weight",
+            )
         except nx.PowerIterationFailedConvergence:
             return [0.0] * n
         return [float(ranks[i]) for i in range(n)]

@@ -44,7 +44,7 @@ Examples:
 Both methods are extractive: they pick existing sentences from the text and return them in their original order. Nothing is rewritten.
 
 * `frequency` - cleans and tokenizes the text (stopwords are removed), then scores each sentence by the average frequency of its words. Each word's count is divided by the count of the most common word, and the average (not the sum) is used so that long sentences do not win automatically. The highest-scoring sentences are kept.
-* `textrank` - builds TF-IDF vectors from the cleaned words of each sentence, measures the cosine similarity between every pair of sentences, and runs PageRank on the resulting graph. Sentences that are similar to many other sentences score highest.
+* `textrank` - builds TF-IDF vectors from the cleaned words of each sentence, measures the cosine similarity between every pair of sentences, and builds a graph with one node per sentence and the similarity as the edge weight (a sentence does not vote for itself). It then runs PageRank with a damping factor of 0.85, at most 100 iterations and a tolerance of 1e-6; these settings are constants at the top of `summarizer/summarizer.py`. Sentences that are similar to many other sentences score highest.
 
 The two methods often agree but can differ. On `article_long.txt`, for example, both choose the same two sentences, and differ on the third: `frequency` picks a survey sentence, while `textrank` picks a sentence that adds the shop owners' opposing view.
 
@@ -121,7 +121,7 @@ Folder mode reads every supported file in the folder (subfolders are not include
 ## Edge cases
 
 * **Empty or too short input** - text that is empty or has fewer than 20 words raises `InvalidInputError`. In folder mode, that article is skipped with a message and the rest still run.
-* **Ties** - if every sentence gets the same score (for example a text made only of stopwords, sentences that share no words, or identical sentences), the first sentences are returned. `textrank` also falls back to equal scores if PageRank fails to converge.
+* **Ties** - if every sentence gets the same score (for example a text made only of stopwords, sentences that share no words, or identical sentences), the first sentences are returned. `textrank` also falls back to equal scores if PageRank fails to converge. If only some sentences tie for a place in the summary, the one that appears earlier in the text is kept (covered by tests).
 * **Asking for more sentences than exist** - if `num_sentences` is larger than the number of sentences, the whole text is returned.
 * **Odd whitespace** - tabs, repeated spaces and blank lines are cleaned up in the output.
 * **Headlines** - a line counts as a headline if it has 12 words or fewer, does not end in sentence punctuation (. ! ? or a closing quote), and the next line starts with a capital letter. Headlines are split off and never chosen for the summary.
@@ -135,7 +135,7 @@ Folder mode reads every supported file in the folder (subfolders are not include
 
 ## Testing
 
-Run all tests from the project folder with `python -m pytest -q`. There are 129 tests. They cover validation, data loading, both scoring methods, edge cases, headline handling and the command line. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess.
+Run all tests from the project folder with `python -m pytest -q`. There are 138 tests. They cover validation, data loading, both scoring methods, the TextRank settings and tie-breaking, edge cases, headline handling and the command line. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess.
 
 
 ## Progress
@@ -146,6 +146,7 @@ Done so far:
 * Core features: TextRank, headline handling, method option on the command line, edge-case tests (Day 5).
 * Integration (Day 6): one shared pipeline that the command line now uses, end-to-end tests, faster preprocessing (the stopword list is loaded once instead of for every sentence), and cleanup of an unused `spacy` requirement and an outdated TODO. `numpy` is now listed in `requirements.txt` because the code imports it directly.
 * Week 1 review (Day 7): reviewed every module and fixed four problems. Hyphenated words are now kept, a URL no longer removes the period that ends its sentence, the command line writes UTF-8 so redirected output cannot crash, and unreadable files give a clear error. The remaining findings and the Week 2 plan are in `PROJECT_LOG.md`.
+* TextRank review (Day 8): the PageRank settings (damping factor 0.85, iteration limit, tolerance) are now named constants, and new tests check them, the fallback when PageRank does not converge, and that tied scores keep the earlier sentence.
 
 Planned next:
 
