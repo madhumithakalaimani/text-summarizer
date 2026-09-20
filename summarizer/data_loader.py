@@ -102,6 +102,8 @@ def load_articles(path):
         raise DataLoadError(f"{path.name} is not valid UTF-8 text: {error}") from error
     except json.JSONDecodeError as error:
         raise DataLoadError(f"{path.name} is not valid JSON: {error}") from error
+    except (OSError, csv.Error) as error:
+        raise DataLoadError(f"{path.name} could not be read: {error}") from error
     if not articles:
         raise DataLoadError(f"No articles found in {path.name}")
     return articles
