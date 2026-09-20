@@ -24,9 +24,15 @@ def ensure_nltk_data() -> None:
             nltk.download(name, quiet=True)
 
 
+# Trailing punctuation that is left behind when a URL is removed, so that
+# "See https://x.com. Next" keeps the period that ends the sentence.
+_URL_TRAILING = ".,;:!?)]" + chr(34) + chr(39) + chr(0x201D) + chr(0x2019)
+_URL_RE = re.compile(r"\s*https?://\S*[^\s" + re.escape(_URL_TRAILING) + "]")
+
+
 def clean_text(text: str) -> str:
     """Normalize whitespace and strip URLs."""
-    text = re.sub(r"https?://\S+", "", text)
+    text = _URL_RE.sub("", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
@@ -89,13 +95,21 @@ def _stopword_set(language: str) -> frozenset:
     return frozenset(stopwords.words(language))
 
 
+def _is_word(token: str) -> bool:
+    """True for alphabetic tokens, including hyphenated words like well-known."""
+    return all(part.isalpha() for part in token.split("-"))
+
+
 def tokenize(sentence: str, language: str = "english") -> List[str]:
-    """Lowercase, tokenize, and drop stopwords and non-alphabetic tokens."""
+    """Lowercase, tokenize, and drop stopwords and non-alphabetic tokens.
+
+    Hyphenated words such as "well-known" are kept as one token.
+    """
     ensure_nltk_data()
     stops = _stopword_set(language)
     return [
         w for w in word_tokenize(sentence.lower())
-        if w.isalpha() and w not in stops
+        if _is_word(w) and w not in stops
     ]
 
 
