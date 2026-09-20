@@ -1,5 +1,6 @@
 """Basic text preprocessing: cleaning, sentence splitting, tokenization."""
 import re
+from functools import lru_cache
 from typing import List, Tuple
 
 import nltk
@@ -13,6 +14,7 @@ _NLTK_RESOURCES = {
 }
 
 
+@lru_cache(maxsize=None)
 def ensure_nltk_data() -> None:
     """Download required NLTK data the first time it's needed."""
     for name, path in _NLTK_RESOURCES.items():
@@ -80,10 +82,17 @@ def split_sentences(text: str, include_headings: bool = True) -> List[str]:
     return [s for s, is_heading in pairs if include_headings or not is_heading]
 
 
+@lru_cache(maxsize=None)
+def _stopword_set(language: str) -> frozenset:
+    """Load the stopword list once per language instead of once per sentence."""
+    ensure_nltk_data()
+    return frozenset(stopwords.words(language))
+
+
 def tokenize(sentence: str, language: str = "english") -> List[str]:
     """Lowercase, tokenize, and drop stopwords and non-alphabetic tokens."""
     ensure_nltk_data()
-    stops = set(stopwords.words(language))
+    stops = _stopword_set(language)
     return [
         w for w in word_tokenize(sentence.lower())
         if w.isalpha() and w not in stops
@@ -96,8 +105,3 @@ def preprocess(text: str, include_headings: bool = True) -> List[Tuple[str, List
     Set include_headings=False to leave headlines out.
     """
     return [(s, tokenize(s)) for s in split_sentences(text, include_headings)]
-
-
-# TODO (Day 4): add lemmatization with spaCy, e.g.
-#   nlp = spacy.load("en_core_web_sm")
-#   lemmas = [t.lemma_ for t in nlp(sentence) if not t.is_stop and t.is_alpha]

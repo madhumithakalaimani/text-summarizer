@@ -13,6 +13,15 @@ The goal of this project is to develop a text summarization system that can conv
 * Evaluate the quality and usefulness of the generated summaries.
 
 
+## Installation
+
+Python 3.13 was used for development. From the project folder:
+
+* `pip install -r requirements.txt`
+
+The NLTK data files (tokenizer and stopwords) are downloaded automatically the first time the summarizer runs, so the first run needs an internet connection.
+
+
 ## Usage
 
 Run the summarizer from the project folder:
@@ -38,6 +47,39 @@ Both methods are extractive: they pick existing sentences from the text and retu
 * `textrank` - builds TF-IDF vectors from the cleaned words of each sentence, measures the cosine similarity between every pair of sentences, and runs PageRank on the resulting graph. Sentences that are similar to many other sentences score highest.
 
 The two methods often agree but can differ. On `article_long.txt`, for example, both choose the same two sentences, and differ on the third: `frequency` picks a survey sentence, while `textrank` picks a sentence that adds the shop owners' opposing view.
+
+
+## How it works
+
+Every summary goes through one pipeline, `summarizer/pipeline.py`. The command line (`main.py`) uses it, and so can any other front end, such as a web app.
+
+1. **Load** - `data_loader.py` reads a file or folder into articles.
+2. **Validate** - `validation.py` checks the text, `num_sentences` and `method`.
+3. **Preprocess** - `preprocessing.py` strips URLs, normalizes whitespace, splits headlines off, splits sentences and tokenizes (lowercase, stopwords and non-alphabetic tokens removed).
+4. **Score** - `summarizer.py` scores each sentence with `frequency` or `textrank`.
+5. **Select** - the top sentences are kept and returned in their original order.
+
+### Using it from Python
+
+`summarize_text` summarizes one string. `summarize_path` summarizes a file or folder and returns one `SummaryResult` per article, with `summary` set, or `error` set if that article failed validation (the rest still run).
+
+    from summarizer.pipeline import summarize_text, summarize_path
+
+    summary = summarize_text(text, num_sentences=3, method="textrank")
+
+    for result in summarize_path("data/samples", num_sentences=2):
+        print(result.title, result.ok, result.summary or result.error)
+
+### Project layout
+
+* `main.py` - command line front end.
+* `summarizer/pipeline.py` - the single entry point (load, validate, summarize).
+* `summarizer/summarizer.py` - `TextSummarizer` with the frequency and TextRank scoring.
+* `summarizer/preprocessing.py` - cleaning, headline handling, sentence splitting, tokenizing.
+* `summarizer/validation.py` - input checks and `InvalidInputError`.
+* `summarizer/data_loader.py` - `.txt`, `.md`, `.csv` and `.json` loading.
+* `data/samples/` - the hand-written sample articles.
+* `tests/` - the automated tests.
 
 
 ## Data sources
@@ -89,3 +131,22 @@ Folder mode reads every supported file in the folder (subfolders are not include
 * A hard-wrapped line whose next line continues with a capitalized word (such as a proper noun) can be mistaken for a headline.
 * If a text with a headline has `num_sentences` or fewer real sentences, it is returned as is, without the headline.
 * The headline must be followed by a newline to be detected.
+
+
+## Testing
+
+Run all tests from the project folder with `python -m pytest -q`. There are 118 tests. They cover validation, data loading, both scoring methods, edge cases, headline handling and the command line. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess.
+
+
+## Progress
+
+Done so far:
+
+* Data and configuration: sample data, data loader, input validation, tests (Day 4).
+* Core features: TextRank, headline handling, method option on the command line, edge-case tests (Day 5).
+* Integration (Day 6): one shared pipeline that the command line now uses, end-to-end tests, faster preprocessing (the stopword list is loaded once instead of for every sentence), and cleanup of an unused `spacy` requirement and an outdated TODO. `numpy` is now listed in `requirements.txt` because the code imports it directly.
+
+Planned next:
+
+* Week 1 review.
+* A small web demo (probably Streamlit) built on the same pipeline, then the demo video.
