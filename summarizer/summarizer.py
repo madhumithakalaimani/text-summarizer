@@ -3,16 +3,18 @@ from collections import Counter
 from typing import List
 
 from .preprocessing import preprocess
+from .validation import validate_method, validate_num_sentences, validate_text
 
 
 class TextSummarizer:
     def __init__(self, method: str = "frequency"):
-        if method not in {"frequency", "textrank"}:
-            raise ValueError(f"Unknown method: {method!r}")
-        self.method = method
+        self.method = validate_method(method)
 
     def summarize(self, text: str, num_sentences: int = 3) -> str:
         """Return the top `num_sentences` sentences, in original order."""
+        text = validate_text(text)
+        num_sentences = validate_num_sentences(num_sentences)
+
         parsed = preprocess(text)
         if len(parsed) <= num_sentences:
             return " ".join(s for s, _ in parsed)

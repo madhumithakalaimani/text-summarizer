@@ -11,3 +11,8 @@ A robotic probe launched on Tuesday to study the icy moons of a distant gas gian
 SHORT_ARTICLE = "The council met on Friday. It approved the budget."
 
 ARTICLES = {"transit": CITY_TRANSIT, "space": SPACE_MISSION}
+
+TWO_SENTENCE_ARTICLE = (
+    "The city council met on Friday evening to review the annual budget proposal. "
+    "After a long debate, members approved the plan and scheduled a public vote for next month."
+)
