@@ -14,7 +14,16 @@ from summarizer.validation import (
 )
 
 
+def _use_utf8_output() -> None:
+    """Write output as UTF-8 so redirected output cannot crash on Windows."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
+
+
 def main() -> None:
+    _use_utf8_output()
     if len(sys.argv) < 2:
         sys.exit(__doc__)
 
