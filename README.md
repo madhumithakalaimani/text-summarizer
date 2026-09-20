@@ -135,7 +135,7 @@ Folder mode reads every supported file in the folder (subfolders are not include
 
 ## Testing
 
-Run all tests from the project folder with `python -m pytest -q`. There are 118 tests. They cover validation, data loading, both scoring methods, edge cases, headline handling and the command line. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess.
+Run all tests from the project folder with `python -m pytest -q`. There are 129 tests. They cover validation, data loading, both scoring methods, edge cases, headline handling and the command line. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess.
 
 
 ## Progress
@@ -145,8 +145,8 @@ Done so far:
 * Data and configuration: sample data, data loader, input validation, tests (Day 4).
 * Core features: TextRank, headline handling, method option on the command line, edge-case tests (Day 5).
 * Integration (Day 6): one shared pipeline that the command line now uses, end-to-end tests, faster preprocessing (the stopword list is loaded once instead of for every sentence), and cleanup of an unused `spacy` requirement and an outdated TODO. `numpy` is now listed in `requirements.txt` because the code imports it directly.
+* Week 1 review (Day 7): reviewed every module and fixed four problems. Hyphenated words are now kept, a URL no longer removes the period that ends its sentence, the command line writes UTF-8 so redirected output cannot crash, and unreadable files give a clear error. The remaining findings and the Week 2 plan are in `PROJECT_LOG.md`.
 
 Planned next:
 
-* Week 1 review.
 * A small web demo (probably Streamlit) built on the same pipeline, then the demo video.
