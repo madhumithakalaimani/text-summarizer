@@ -4,10 +4,14 @@ import csv
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterator
 
 SUPPORTED_EXTENSIONS = (".txt", ".md", ".csv", ".json")
 TEXT_FIELDS = ("text", "content", "article", "body")
 TITLE_FIELDS = ("title", "headline")
+
+# Allow very long text fields (the csv module stops at 128 KB by default)
+csv.field_size_limit(10_000_000)
 
 
 class DataLoadError(ValueError):
@@ -51,19 +55,21 @@ def _to_article(record, index, source):
     return Article(article_id, title, text, source)
 
 
-def _load_text(path):
+def _read_text(path):
     text = path.read_text(encoding="utf-8-sig").strip()
-    return [Article(path.stem, path.stem, text, path.name)]
+    yield Article(path.stem, path.stem, text, path.name)
 
 
-def _load_csv(path):
-    csv.field_size_limit(10_000_000)
+def _read_csv(path):
+    # Rows are read one at a time, so a huge CSV never sits in memory.
     with path.open(newline="", encoding="utf-8-sig") as handle:
-        rows = list(csv.DictReader(handle))
-    return [_to_article(row, i, path.name) for i, row in enumerate(rows, start=1)]
+        for index, row in enumerate(csv.DictReader(handle), start=1):
+            yield _to_article(row, index, path.name)
 
 
-def _load_json(path):
+def _read_json(path):
+    # The json module cannot read a file piece by piece, so the whole file is
+    # parsed at once. The articles are still handed out one at a time.
     with path.open(encoding="utf-8-sig") as handle:
         data = json.load(handle)
     if isinstance(data, dict) and isinstance(data.get("articles"), list):
@@ -75,11 +81,42 @@ def _load_json(path):
             f"{path.name}: expected a list of articles or an object, "
             f"got {type(data).__name__}"
         )
-    return [_to_article(item, i, path.name) for i, item in enumerate(data, start=1)]
+    for index, item in enumerate(data, start=1):
+        yield _to_article(item, index, path.name)
 
 
-def load_articles(path):
-    """Load all articles from one file. Returns a list of Article objects."""
+_READERS = {
+    ".txt": _read_text,
+    ".md": _read_text,
+    ".csv": _read_csv,
+    ".json": _read_json,
+}
+
+
+def _stream_file(path, reader):
+    """Yield articles from one file; read problems become DataLoadError."""
+    count = 0
+    try:
+        for article in reader(path):
+            count += 1
+            yield article
+    except UnicodeDecodeError as error:
+        raise DataLoadError(f"{path.name} is not valid UTF-8 text: {error}") from error
+    except json.JSONDecodeError as error:
+        raise DataLoadError(f"{path.name} is not valid JSON: {error}") from error
+    except (OSError, csv.Error) as error:
+        raise DataLoadError(f"{path.name} could not be read: {error}") from error
+    if count == 0:
+        raise DataLoadError(f"No articles found in {path.name}")
+
+
+def iter_articles(path) -> Iterator[Article]:
+    """Yield the articles of one file, one at a time.
+
+    A missing file, a folder or an unsupported type is reported right away.
+    Problems inside the file (bad JSON, a bad row, invalid UTF-8) are raised
+    as DataLoadError when the reader reaches them.
+    """
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
@@ -91,33 +128,40 @@ def load_articles(path):
             f"Unsupported file type '{extension}' for {path.name}. "
             f"Supported: {', '.join(SUPPORTED_EXTENSIONS)}"
         )
-    try:
-        if extension in (".txt", ".md"):
-            articles = _load_text(path)
-        elif extension == ".csv":
-            articles = _load_csv(path)
-        else:
-            articles = _load_json(path)
-    except UnicodeDecodeError as error:
-        raise DataLoadError(f"{path.name} is not valid UTF-8 text: {error}") from error
-    except json.JSONDecodeError as error:
-        raise DataLoadError(f"{path.name} is not valid JSON: {error}") from error
-    except (OSError, csv.Error) as error:
-        raise DataLoadError(f"{path.name} could not be read: {error}") from error
-    if not articles:
-        raise DataLoadError(f"No articles found in {path.name}")
-    return articles
+    return _stream_file(path, _READERS[extension])
 
 
-def load_directory(folder):
-    """Load every supported file in a folder (not recursive)."""
+def _stream_files(paths):
+    for path in paths:
+        yield from iter_articles(path)
+
+
+def iter_directory(folder) -> Iterator[Article]:
+    """Yield the articles of every supported file in a folder (not recursive)."""
     folder = Path(folder)
     if not folder.is_dir():
         raise FileNotFoundError(f"Folder not found: {folder}")
-    articles = []
-    for path in sorted(folder.iterdir()):
-        if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS:
-            articles.extend(load_articles(path))
-    if not articles:
+    paths = [
+        path
+        for path in sorted(folder.iterdir())
+        if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS
+    ]
+    if not paths:
         raise DataLoadError(f"No supported files found in {folder}")
-    return articles
+    return _stream_files(paths)
+
+
+def iter_path(path) -> Iterator[Article]:
+    """Yield the articles of a file or of every supported file in a folder."""
+    path = Path(path)
+    return iter_directory(path) if path.is_dir() else iter_articles(path)
+
+
+def load_articles(path):
+    """Load all articles from one file. Returns a list of Article objects."""
+    return list(iter_articles(path))
+
+
+def load_directory(folder):
+    """Load every supported file in a folder (not recursive) into a list."""
+    return list(iter_directory(folder))

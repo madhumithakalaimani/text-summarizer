@@ -61,7 +61,7 @@ Every summary goes through one pipeline, `summarizer/pipeline.py`. The command l
 
 ### Using it from Python
 
-`summarize_text` summarizes one string. `summarize_path` summarizes a file or folder and returns one `SummaryResult` per article, with `summary` set, or `error` set if that article failed validation (the rest still run).
+`summarize_text` summarizes one string. `summarize_path` summarizes a file or folder and returns one `SummaryResult` per article, with `summary` set, or `error` set if that article failed validation (the rest still run). `iter_summaries` does the same but yields the results one at a time (see Large datasets below).
 
     from summarizer.pipeline import summarize_text, summarize_path
 
@@ -73,13 +73,31 @@ Every summary goes through one pipeline, `summarizer/pipeline.py`. The command l
 ### Project layout
 
 * `main.py` - command line front end.
-* `summarizer/pipeline.py` - the single entry point (load, validate, summarize).
+* `summarizer/pipeline.py` - the single entry point (load, validate, summarize), as a list or one result at a time.
 * `summarizer/summarizer.py` - `TextSummarizer` with the frequency and TextRank scoring.
 * `summarizer/preprocessing.py` - cleaning, headline handling, sentence splitting, tokenizing.
 * `summarizer/validation.py` - input checks and `InvalidInputError`.
-* `summarizer/data_loader.py` - `.txt`, `.md`, `.csv` and `.json` loading.
+* `summarizer/data_loader.py` - `.txt`, `.md`, `.csv` and `.json` loading, as lists or one article at a time.
 * `data/samples/` - the hand-written sample articles.
 * `tests/` - the automated tests.
+
+
+## Large datasets
+
+The loader and the pipeline can work one article at a time, so a big file does not have to fit in memory.
+
+* `iter_articles`, `iter_directory` and `iter_path` (in `summarizer/data_loader.py`) and `iter_summaries` (in `summarizer/pipeline.py`) are generators: they yield one article, or one `SummaryResult`, at a time. `load_articles`, `load_directory` and `summarize_path` are the same functions wrapped in `list(...)`.
+* A `.csv` file is read row by row, so memory use stays flat however many rows it has. A `.json` file has to be parsed whole (JSON cannot be streamed), although its articles are still handed on one at a time. Use CSV for very large data.
+* Paths and options are checked as soon as you call the function (a missing file, an unsupported extension, a bad `num_sentences` or `method`), not when you start reading the results.
+* The command line prints each summary as soon as it is ready. The `=== title (source) ===` headers appear only when there is more than one article.
+* An invalid article (for example one with fewer than 20 words) is skipped with a message and the rest still run; the exit code is 1 if any article was skipped. A bad row or an unreadable file still stops the run with `Error: ...` and exit code 1, but the summaries finished before that point are printed first.
+
+Example:
+
+    from summarizer.pipeline import iter_summaries
+
+    for result in iter_summaries("data/samples/articles.csv", num_sentences=2):
+        print(result.title, result.summary or result.error)
 
 
 ## Data sources
@@ -135,7 +153,7 @@ Folder mode reads every supported file in the folder (subfolders are not include
 
 ## Testing
 
-Run all tests from the project folder with `python -m pytest -q`. There are 138 tests. They cover validation, data loading, both scoring methods, the TextRank settings and tie-breaking, edge cases, headline handling and the command line. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess.
+Run all tests from the project folder with `python -m pytest -q`. There are 150 tests. They cover validation, data loading, both scoring methods, the TextRank settings and tie-breaking, edge cases, headline handling, streaming and the command line. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess. The tests in `tests/test_streaming_pipeline.py` check that articles and summaries are produced one at a time, including what happens at a bad CSV row.
 
 
 ## Progress
@@ -147,6 +165,7 @@ Done so far:
 * Integration (Day 6): one shared pipeline that the command line now uses, end-to-end tests, faster preprocessing (the stopword list is loaded once instead of for every sentence), and cleanup of an unused `spacy` requirement and an outdated TODO. `numpy` is now listed in `requirements.txt` because the code imports it directly.
 * Week 1 review (Day 7): reviewed every module and fixed four problems. Hyphenated words are now kept, a URL no longer removes the period that ends its sentence, the command line writes UTF-8 so redirected output cannot crash, and unreadable files give a clear error. The remaining findings and the Week 2 plan are in `PROJECT_LOG.md`.
 * TextRank review (Day 8): the PageRank settings (damping factor 0.85, iteration limit, tolerance) are now named constants, and new tests check them, the fallback when PageRank does not converge, and that tied scores keep the earlier sentence.
+* Large datasets (Day 9): the loader and the pipeline now stream. `iter_articles`, `iter_directory`, `iter_path` and `iter_summaries` yield one item at a time, CSV files are read row by row, and the command line prints each summary as soon as it is ready. `csv.field_size_limit` is now set once at module level.
 
 Planned next:
 
