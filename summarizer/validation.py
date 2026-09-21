@@ -9,7 +9,9 @@ class InvalidInputError(ValueError):
     """Raised when input to the summarizer is invalid."""
 
 
-def validate_text(text, min_words=MIN_WORDS, max_chars=MAX_CHARS):
+def validate_text(
+    text: str, min_words: int = MIN_WORDS, max_chars: int = MAX_CHARS
+) -> str:
     """Return the stripped text, or raise InvalidInputError."""
     if not isinstance(text, str):
         raise InvalidInputError(
@@ -30,7 +32,7 @@ def validate_text(text, min_words=MIN_WORDS, max_chars=MAX_CHARS):
     return cleaned
 
 
-def validate_num_sentences(num_sentences):
+def validate_num_sentences(num_sentences) -> int:
     """Return num_sentences if it is an int >= 1, else raise InvalidInputError."""
     if isinstance(num_sentences, bool) or not isinstance(num_sentences, int):
         raise InvalidInputError(
@@ -41,7 +43,7 @@ def validate_num_sentences(num_sentences):
     return num_sentences
 
 
-def validate_method(method):
+def validate_method(method) -> str:
     """Return the method name in lowercase, or raise InvalidInputError."""
     if not isinstance(method, str):
         raise InvalidInputError(

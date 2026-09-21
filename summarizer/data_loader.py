@@ -27,12 +27,17 @@ class Article:
 
 
 def _pick(record, names):
-    """Return the first matching field (case-insensitive) as a stripped string."""
+    """Return the first matching field (case-insensitive) as a stripped
+    string, skipping fields that are missing or blank so a later, populated
+    field is still used."""
     lowered = {str(key).strip().lower(): value for key, value in record.items()}
     for name in names:
         value = lowered.get(name)
-        if value is not None:
-            return str(value).strip()
+        if value is None:
+            continue
+        stripped = str(value).strip()
+        if stripped:
+            return stripped
     return None
 
 

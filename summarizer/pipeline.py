@@ -1,11 +1,11 @@
-"""One entry point that ties loading, validation, preprocessing and summarization together.
+"""One entry point that ties loading, validation, preprocessing and
+summarization together.
 
 The CLI (main.py) and any UI should call these functions instead of
 repeating the load / validate / summarize steps.
 """
 import logging
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterator, List, Optional
 
 from .data_loader import iter_path

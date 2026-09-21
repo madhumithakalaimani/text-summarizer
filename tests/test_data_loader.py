@@ -68,6 +68,16 @@ def test_csv_missing_text_field_raises(tmp_path):
         load_articles(f)
 
 
+def test_csv_blank_text_field_falls_back_to_next_field(tmp_path):
+    f = tmp_path / "blank.csv"
+    f.write_text(
+        'id,text,content\n1,,Real text here.\n',
+        encoding="utf-8",
+    )
+    [article] = load_articles(f)
+    assert article.text == "Real text here."
+
+
 def test_csv_with_only_header_raises(tmp_path):
     f = tmp_path / "empty.csv"
     f.write_text("id,title,text\n", encoding="utf-8")
