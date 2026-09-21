@@ -38,6 +38,12 @@ End of Week 1: 129 tests passing.
 * A short line ending in a colon or an ellipsis, followed by a capitalized line, is treated as a headline.
 * Small polish: type hints in validation.py, long lines, csv.field_size_limit set on every call, and _pick returns an empty first match even if a later column has text.
 
+## Known gap
+
+* Days 8-12 were completed (Streamlit demo, Flask API, error handling,
+  dataset slice, deployment) but not logged here day-by-day yet. To be
+  backfilled from git log.
+
 ## Week 2 plan (tentative, to be adjusted to the official task list)
 
 Goal: a working online demo and a demo video.
@@ -49,3 +55,18 @@ Goal: a working online demo and a demo video.
 * Day 12: deploy the app on a free host and test it there.
 * Day 13: record the demo video and add the demo URL to the README.
 * Day 14: Week 2 review and final checks.
+
+## Day 13
+
+Official task: performance testing of the text summarizer using
+benchmarking tools.
+
+* Installed pytest-benchmark and added it to requirements.txt.
+* Added tests/test_benchmark_performance.py, benchmarking summarize_text
+  for both frequency and textrank methods across short, medium and long
+  inputs (base sample text repeated 1x, 5x and 20x).
+* Results (mean time): frequency is faster than textrank at every size,
+  and the gap widens as input grows (short: ~0.5ms vs ~3.0ms; medium:
+  ~2.4ms vs ~5.8ms; long: ~11.1ms vs ~39.7ms). TextRank's graph-based
+  ranking scales worse with input size than the frequency count.
+* Full suite: 228 tests passing (222 previous + 6 new benchmarks).
