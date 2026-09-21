@@ -73,6 +73,7 @@ Every summary goes through one pipeline, `summarizer/pipeline.py`. The command l
 ### Project layout
 
 * `main.py` - command line front end.
+* `app.py` - Flask web API (`/health` and `/summarize`).
 * `summarizer/pipeline.py` - the single entry point (load, validate, summarize), as a list or one result at a time.
 * `summarizer/summarizer.py` - `TextSummarizer` with the frequency and TextRank scoring.
 * `summarizer/preprocessing.py` - cleaning, headline handling, sentence splitting, tokenizing.
@@ -98,6 +99,43 @@ Example:
 
     for result in iter_summaries("data/samples/articles.csv", num_sentences=2):
         print(result.title, result.summary or result.error)
+
+
+## API
+
+`app.py` is a small Flask app that serves the same pipeline over HTTP (JSON in, JSON out). Start it from the project folder:
+
+    python app.py
+
+It listens on http://127.0.0.1:5000 (set the `PORT` environment variable to use another port). `flask --app app run` works too. This is the development server; use a production WSGI server for a real deployment.
+
+### Endpoints
+
+* `GET /health` - returns `{"status": "ok"}`.
+* `POST /summarize` - summarizes one text. The request must be JSON (`Content-Type: application/json`).
+
+Fields of the `POST /summarize` request:
+
+* `text` (required) - a string with at least 20 words and at most 1,000,000 characters.
+* `num_sentences` (optional, default 3) - a whole number of at least 1. Strings such as "3", decimals and booleans are rejected.
+* `method` (optional, default `frequency`) - `frequency` or `textrank` (case-insensitive).
+
+A successful response (status 200) contains `summary`, `method` (in lowercase), `num_sentences`, `original_words` and `summary_words`.
+
+Example in PowerShell (with the server running in another window):
+
+    $body = @{ text = "Solar power has grown quickly over the last decade. Panels are cheaper and more efficient than they used to be. Many countries now add more solar capacity than any other source."; num_sentences = 2; method = "textrank" } | ConvertTo-Json
+    Invoke-RestMethod -Uri http://127.0.0.1:5000/summarize -Method Post -ContentType "application/json" -Body $body
+
+### Errors
+
+Every error is JSON in the form `{"error": "message"}`:
+
+* `400` - the body is not a JSON object, `text` is missing, or `text`, `num_sentences` or `method` fails validation (the message is the same as on the command line).
+* `404` and `405` - unknown URL, or the wrong HTTP method (a 405 also sends an `Allow` header).
+* `413` - the request body is larger than 5 MB.
+* `415` - the request is not sent as `application/json`.
+* `500` - an unexpected error. The client only sees a generic message; the details are logged on the server.
 
 
 ## Data sources
@@ -153,7 +191,7 @@ Folder mode reads every supported file in the folder (subfolders are not include
 
 ## Testing
 
-Run all tests from the project folder with `python -m pytest -q`. There are 150 tests. They cover validation, data loading, both scoring methods, the TextRank settings and tie-breaking, edge cases, headline handling, streaming and the command line. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess. The tests in `tests/test_streaming_pipeline.py` check that articles and summaries are produced one at a time, including what happens at a bad CSV row.
+Run all tests from the project folder with `python -m pytest -q`. There are 179 tests. They cover validation, data loading, both scoring methods, the TextRank settings and tie-breaking, edge cases, headline handling, streaming, the command line and the API. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess. The tests in `tests/test_streaming_pipeline.py` check that articles and summaries are produced one at a time, including what happens at a bad CSV row. The tests in `tests/test_api.py` use Flask's test client to check every endpoint, status code and error message.
 
 
 ## Progress
@@ -166,6 +204,7 @@ Done so far:
 * Week 1 review (Day 7): reviewed every module and fixed four problems. Hyphenated words are now kept, a URL no longer removes the period that ends its sentence, the command line writes UTF-8 so redirected output cannot crash, and unreadable files give a clear error. The remaining findings and the Week 2 plan are in `PROJECT_LOG.md`.
 * TextRank review (Day 8): the PageRank settings (damping factor 0.85, iteration limit, tolerance) are now named constants, and new tests check them, the fallback when PageRank does not converge, and that tied scores keep the earlier sentence.
 * Large datasets (Day 9): the loader and the pipeline now stream. `iter_articles`, `iter_directory`, `iter_path` and `iter_summaries` yield one item at a time, CSV files are read row by row, and the command line prints each summary as soon as it is ready. `csv.field_size_limit` is now set once at module level.
+* Web API (Day 10): `app.py` is a Flask app with `GET /health` and `POST /summarize`, built on the same pipeline. Bad input returns a JSON error with status 400, and the other errors (404, 405, 413, 415, 500) are JSON too. `flask` is now in `requirements.txt`, and 29 new tests use Flask's test client.
 
 Planned next:
 
