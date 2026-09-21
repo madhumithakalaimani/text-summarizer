@@ -13,6 +13,7 @@ from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 
 from summarizer.pipeline import summarize_text
+from summarizer.preprocessing import NLTKDataError
 from summarizer.validation import (
     InvalidInputError,
     validate_method,
@@ -56,6 +57,13 @@ def create_app():
             )
         except InvalidInputError as exc:
             return _error(str(exc), 400)
+        except NLTKDataError as exc:
+            app.logger.error("NLTK data unavailable: %s", exc)
+            return _error(
+                "Summarizer is temporarily unavailable: required language "
+                "data could not be loaded.",
+                503,
+            )
         return jsonify(
             {
                 "summary": summary,

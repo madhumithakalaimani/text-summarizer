@@ -19,7 +19,7 @@ Python 3.13 was used for development. From the project folder:
 
 * `pip install -r requirements.txt`
 
-The NLTK data files (tokenizer and stopwords) are downloaded automatically the first time the summarizer runs, so the first run needs an internet connection.
+The NLTK data files (tokenizer and stopwords) are downloaded automatically the first time the summarizer runs, so the first run needs an internet connection. If the download fails, the summarizer stops with a clear error (see "Error handling" below) instead of failing silently. To install the data by hand, run `python -m nltk.downloader punkt punkt_tab stopwords`.
 
 
 ## Usage
@@ -61,7 +61,7 @@ Every summary goes through one pipeline, `summarizer/pipeline.py`. The command l
 
 ### Using it from Python
 
-`summarize_text` summarizes one string. `summarize_path` summarizes a file or folder and returns one `SummaryResult` per article, with `summary` set, or `error` set if that article failed validation (the rest still run). `iter_summaries` does the same but yields the results one at a time (see Large datasets below).
+`summarize_text` summarizes one string. `summarize_path` summarizes a file or folder and returns one `SummaryResult` per article, with `summary` set, or `error` set if that article failed validation or hit an unexpected error (the rest still run). Missing NLTK data raises `NLTKDataError` and stops the run. `iter_summaries` does the same but yields the results one at a time (see Large datasets below).
 
     from summarizer.pipeline import summarize_text, summarize_path
 
@@ -76,7 +76,7 @@ Every summary goes through one pipeline, `summarizer/pipeline.py`. The command l
 * `app.py` - Flask web API (`/health` and `/summarize`).
 * `summarizer/pipeline.py` - the single entry point (load, validate, summarize), as a list or one result at a time.
 * `summarizer/summarizer.py` - `TextSummarizer` with the frequency and TextRank scoring.
-* `summarizer/preprocessing.py` - cleaning, headline handling, sentence splitting, tokenizing.
+* `summarizer/preprocessing.py` - cleaning, headline handling, sentence splitting, tokenizing, and the NLTK data check (`NLTKDataError`).
 * `summarizer/validation.py` - input checks and `InvalidInputError`.
 * `summarizer/data_loader.py` - `.txt`, `.md`, `.csv` and `.json` loading, as lists or one article at a time.
 * `data/samples/` - the hand-written sample articles.
@@ -136,6 +136,16 @@ Every error is JSON in the form `{"error": "message"}`:
 * `413` - the request body is larger than 5 MB.
 * `415` - the request is not sent as `application/json`.
 * `500` - an unexpected error. The client only sees a generic message; the details are logged on the server.
+* `503` - the NLTK data is missing and could not be downloaded (see "Error handling"). The client only sees a generic message; the details are logged on the server.
+
+
+## Error handling
+
+Three kinds of problems are handled:
+
+* **Invalid input** - empty or too short text, a bad `num_sentences` or a bad `method` raises `InvalidInputError`. On the command line the article is skipped with a message and the rest still run (the exit code is 1 at the end). The API returns `400`.
+* **An unexpected error on one article** - the article is reported with `error` set to `Unexpected <ErrorType>: <message>`, and the rest of the batch still runs. On the command line it is skipped with a message and the exit code is 1 at the end.
+* **Missing NLTK data (for example no network)** - `ensure_nltk_data()` tries to download the data, checks again, and raises `NLTKDataError` with a clear message if something is still missing. This stops the whole run, because every article would fail the same way. The command line prints `Error: ...` and exits with code 1 (summaries finished before that point are printed first). The API returns `503` with a generic message and logs the details. A failed check is not cached, so the next call tries the download again and no restart is needed once the network is back.
 
 
 ## Data sources
@@ -191,7 +201,7 @@ Folder mode reads every supported file in the folder (subfolders are not include
 
 ## Testing
 
-Run all tests from the project folder with `python -m pytest -q`. There are 179 tests. They cover validation, data loading, both scoring methods, the TextRank settings and tie-breaking, edge cases, headline handling, streaming, the command line and the API. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess. The tests in `tests/test_streaming_pipeline.py` check that articles and summaries are produced one at a time, including what happens at a bad CSV row. The tests in `tests/test_api.py` use Flask's test client to check every endpoint, status code and error message.
+Run all tests from the project folder with `python -m pytest -q`. There are 193 tests. They cover validation, data loading, both scoring methods, the TextRank settings and tie-breaking, edge cases, headline handling, streaming, the command line and the API. The end-to-end tests in `tests/test_pipeline_end_to_end.py` run real files through the whole pipeline and through `main.py` as a subprocess. The tests in `tests/test_streaming_pipeline.py` check that articles and summaries are produced one at a time, including what happens at a bad CSV row. The tests in `tests/test_api.py` use Flask's test client to check every endpoint, status code and error message. The tests in `tests/test_error_handling.py` use a fake NLTK data folder, so no real network is touched, to check missing data, unexpected errors inside a batch, and the command line and API responses.
 
 
 ## Progress
@@ -205,6 +215,7 @@ Done so far:
 * TextRank review (Day 8): the PageRank settings (damping factor 0.85, iteration limit, tolerance) are now named constants, and new tests check them, the fallback when PageRank does not converge, and that tied scores keep the earlier sentence.
 * Large datasets (Day 9): the loader and the pipeline now stream. `iter_articles`, `iter_directory`, `iter_path` and `iter_summaries` yield one item at a time, CSV files are read row by row, and the command line prints each summary as soon as it is ready. `csv.field_size_limit` is now set once at module level.
 * Web API (Day 10): `app.py` is a Flask app with `GET /health` and `POST /summarize`, built on the same pipeline. Bad input returns a JSON error with status 400, and the other errors (404, 405, 413, 415, 500) are JSON too. `flask` is now in `requirements.txt`, and 29 new tests use Flask's test client.
+* Error handling (Day 11): missing NLTK data (for example with no network) now raises a clear `NLTKDataError` instead of failing silently, and a failed check is retried on the next call. The command line prints `Error: ...` and exits with code 1, and the API returns a 503 with a generic message. An unexpected error on one article no longer stops a batch: that article is reported and the rest still run. 14 new tests use a fake NLTK data folder.
 
 Planned next:
 

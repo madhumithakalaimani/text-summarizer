@@ -7,6 +7,7 @@ import sys
 
 from summarizer.data_loader import DataLoadError
 from summarizer.pipeline import iter_summaries
+from summarizer.preprocessing import NLTKDataError
 from summarizer.validation import (
     InvalidInputError,
     validate_method,
@@ -89,7 +90,7 @@ def main() -> None:
         failed = _print_results(
             iter_summaries(sys.argv[1], num_sentences=n, method=method)
         )
-    except (FileNotFoundError, DataLoadError) as error:
+    except (FileNotFoundError, DataLoadError, NLTKDataError) as error:
         sys.exit(f"Error: {error}")
     if failed:
         sys.exit(1)

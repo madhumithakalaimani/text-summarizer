@@ -14,14 +14,43 @@ _NLTK_RESOURCES = {
 }
 
 
+class NLTKDataError(RuntimeError):
+    """Raised when required NLTK data is missing and could not be downloaded."""
+
+
+def _has_resource(path: str) -> bool:
+    try:
+        nltk.data.find(path)
+    except LookupError:
+        return False
+    return True
+
+
 @lru_cache(maxsize=None)
 def ensure_nltk_data() -> None:
-    """Download required NLTK data the first time it's needed."""
+    """Make sure the required NLTK data is installed, downloading it if needed.
+
+    Raises NLTKDataError with a clear message if something is still missing
+    afterwards (for example when there is no network connection). A failed
+    call is not cached, so the next call tries the download again.
+    """
+    missing = []
     for name, path in _NLTK_RESOURCES.items():
+        if _has_resource(path):
+            continue
         try:
-            nltk.data.find(path)
-        except LookupError:
             nltk.download(name, quiet=True)
+        except Exception:
+            pass  # judged by the re-check below, whatever the network error was
+        if not _has_resource(path):
+            missing.append(name)
+    if missing:
+        raise NLTKDataError(
+            "Required NLTK data is missing and could not be downloaded: "
+            + ", ".join(missing)
+            + ". Check your internet connection, or install it with: "
+            "python -m nltk.downloader " + " ".join(missing)
+        )
 
 
 # Trailing punctuation that is left behind when a URL is removed, so that
