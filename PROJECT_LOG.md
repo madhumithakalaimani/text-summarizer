@@ -70,3 +70,20 @@ benchmarking tools.
   ~2.4ms vs ~5.8ms; long: ~11.1ms vs ~39.7ms). TextRank's graph-based
   ranking scales worse with input size than the frequency count.
 * Full suite: 228 tests passing (222 previous + 6 new benchmarks).
+
+## Day 15
+
+Official task: add advanced features such as summarization of long
+documents or multi-document summarization.
+
+* Added summarize_multiple() to summarizer/pipeline.py: joins a list of
+  documents into one text and summarizes them together with the existing
+  TextSummarizer, so the result can draw sentences from any input document.
+* Raises InvalidInputError if the document list is empty; reuses the
+  existing validate_method and validate_num_sentences checks.
+* Added tests/test_multi_document.py: combining two documents, a single
+  document, the empty-list error, and the textrank method.
+* Long-document chunking was considered but left for a later day, since it
+  needs a merge/re-rank strategy rather than reusing the pipeline directly.
+* Full suite: 233 tests passing (229 previous + 4 new).
+

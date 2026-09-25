@@ -87,3 +87,22 @@ def summarize_path(
     with an error. Use iter_summaries for very large inputs.
     """
     return list(iter_summaries(path, num_sentences=num_sentences, method=method))
+
+
+def summarize_multiple(
+    documents: List[str], num_sentences: int = 3, method: str = "frequency"
+) -> str:
+    """Summarize a list of documents together as one combined summary.
+
+    The documents are joined into one text and scored as a whole, so the
+    most important sentences can come from any of the input documents.
+    Raises InvalidInputError if documents is empty.
+    """
+    if not documents:
+        raise InvalidInputError("documents must be a non-empty list of strings")
+    method = validate_method(method)
+    num_sentences = validate_num_sentences(num_sentences)
+    combined = "\n\n".join(documents)
+    return TextSummarizer(method=method).summarize(
+        combined, num_sentences=num_sentences
+    )
