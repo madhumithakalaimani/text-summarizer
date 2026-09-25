@@ -108,3 +108,19 @@ techniques such as parallel processing or caching.
   cached result matches an uncached result, and a non-string input still
   raises InvalidInputError rather than TypeError.
 * Full suite: 236 tests passing (233 previous + 3 new caching tests).
+
+## Day 17
+
+Official task: conduct user testing and gather feedback on the text
+summarizer.
+
+* Manually tested main.py (CLI) against short, long, and empty text files,
+  the textrank method, and a mixed-content folder batch run; also tested
+  the Flask API's /health and /summarize (invalid input) endpoints.
+* No production code changed. Findings and a backlog of follow-up items
+  written up in docs/day17_user_testing.md.
+* Key findings: short-input error message could suggest a next step;
+  batch-folder output does not group skipped files separately from
+  successful summaries; first request has a noticeable NLTK warm-up
+  delay worth flagging in the demo video.
+* Full suite: 236 tests passing (no change, no code touched).
