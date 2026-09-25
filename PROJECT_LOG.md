@@ -87,3 +87,24 @@ documents or multi-document summarization.
   needs a merge/re-rank strategy rather than reusing the pipeline directly.
 * Full suite: 233 tests passing (229 previous + 4 new).
 
+
+## Day 16
+
+Official task: optimize performance of the text summarizer using
+techniques such as parallel processing or caching.
+
+* Added caching to summarizer/pipeline.py: summarize_text() now checks
+  that text is a string (raising InvalidInputError otherwise) and then
+  delegates to a new _cached_summarize_text(), which is wrapped in
+  functools.lru_cache(maxsize=256). Repeated identical calls (same text,
+  num_sentences, method) now return instantly instead of re-running
+  NLTK/TF-IDF work.
+* The string check happens in summarize_text() rather than inside the
+  cached function because lru_cache requires hashable arguments; without
+  the check, a non-string text such as a list raised a raw TypeError
+  instead of the usual InvalidInputError. Caught by test_api.py during
+  this change and fixed by splitting the function in two.
+* Added tests/test_caching.py: a repeated call registers a cache hit, a
+  cached result matches an uncached result, and a non-string input still
+  raises InvalidInputError rather than TypeError.
+* Full suite: 236 tests passing (233 previous + 3 new caching tests).

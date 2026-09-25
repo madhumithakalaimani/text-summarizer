@@ -6,6 +6,7 @@ repeating the load / validate / summarize steps.
 """
 import logging
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Iterator, List, Optional
 
 from .data_loader import iter_path
@@ -31,9 +32,28 @@ class SummaryResult:
         return self.error is None
 
 
-def summarize_text(text: str, num_sentences: int = 3, method: str = "frequency") -> str:
-    """Summarize one text string. Raises InvalidInputError on bad input."""
+# Cache repeated identical calls (same text, num_sentences, method) so the
+# API and CLI do not redo the same NLTK/TF-IDF work for a duplicate request.
+# maxsize bounds memory since inputs (especially text) can vary widely.
+@lru_cache(maxsize=256)
+def _cached_summarize_text(text: str, num_sentences: int, method: str) -> str:
     return TextSummarizer(method=method).summarize(text, num_sentences=num_sentences)
+
+
+def summarize_text(text: str, num_sentences: int = 3, method: str = "frequency") -> str:
+    """Summarize one text string. Raises InvalidInputError on bad input.
+
+    Identical calls (same text, num_sentences, method) are cached, so a
+    repeated call returns instantly instead of re-running the summarizer.
+    text is checked here (not left to TextSummarizer) because lru_cache
+    requires hashable arguments; an unhashable text such as a list would
+    otherwise raise TypeError instead of the usual InvalidInputError.
+    """
+    if not isinstance(text, str):
+        raise InvalidInputError(
+            f"Text must be a string, got {type(text).__name__}."
+        )
+    return _cached_summarize_text(text, num_sentences, method)
 
 
 def iter_summaries(
