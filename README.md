@@ -234,7 +234,8 @@ Done so far:
 * Documentation backfill (Day 21): `PROJECT_LOG.md` fully backfilled through Day 20.
 * Deployment (Day 22): deployed to Render (free tier), at https://render.com. Live at https://text-summarizer-9e4x.onrender.com. `app.py` now binds to `0.0.0.0` and reads `PORT` from the environment; `gunicorn` was added to `requirements.txt` as the production WSGI server, and `render.yaml` documents the build/start commands.
 * Demo video (Day 23): recorded a ~67s screen-capture demo of the live site (a successful summary and the validation error message), uploaded to Google Drive with a shareable "Anyone with the link / Viewer" link (see "Demo" section above). The recording started with the server already warm, so the NLTK cold-start delay noted in Day 17 user testing was not captured on camera; it is documented as a known limitation in the "Demo" section instead.
+* Final QA (Day 28): added pytest-cov and closed coverage gaps from 98% to 99% with tests/test_final_qa.py (4 new tests), covering the GET / route, logging idempotency, the NLTK resource-missing fallback, and the empty-vocabulary TextRank fallback. 244 tests passing.
 
 Planned next:
 
-* Submit the project on CodeZoner's "Submit Project" form.
+* Project submitted on CodeZoner (Day 25); LinkedIn share posted (Day 26); portfolio cleanup and final QA complete (Days 27-28).

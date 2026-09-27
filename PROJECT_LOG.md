@@ -258,3 +258,19 @@ Official task: clean up portfolio and ensure consistency across all projects.
   described in that commit is this Day 27 task, not Day 25. Recording the
   correct day here since the commit message itself was not amended (no
   force-push, per project rules).
+
+## Day 28
+
+Official task: final testing and quality assurance of text summarizer before deployment.
+
+* Added test coverage tooling (pytest-cov) and ran a full coverage report;
+  baseline was 98% (7 lines uncovered across app.py, logging_config.py,
+  preprocessing.py, summarizer.py).
+* Added tests/test_final_qa.py (4 tests) covering: the GET / route, logging
+  idempotency (setup_logging called twice only adds handlers once), the
+  NLTK "resource missing" fallback in preprocessing, and the empty-vocabulary
+  fallback in TextRank scoring.
+* Full suite: 244 tests passing, coverage now 99%. The only remaining
+  uncovered line is app.py's "if __name__ == '__main__'" entrypoint, which
+  is not exercised in production since Render runs via gunicorn.
+* Added pytest-cov>=7.1 to requirements.txt.
