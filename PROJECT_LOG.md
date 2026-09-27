@@ -217,3 +217,28 @@ platform (task text named AWS or Google Cloud as examples).
   Streamlit-demo plan.
 * Full suite: 240 tests passing (no test changes needed; deployment
   config and docs only).
+
+## Day 23
+
+Official task: record a demo video of the deployed application.
+
+* Wrote DEMO_SCRIPT.md as a recording checklist.
+* Recorded a ~67s screen-capture demo of the live site (a successful
+  summary and the validation error message), with audio.
+* Uploaded the video to Google Drive with a shareable "Anyone with the
+  link / Viewer" link; the link is now in README.md's new "Demo" section.
+* The recording started with the server already warm, so the NLTK
+  cold-start delay flagged in Day 17 user testing was not captured on
+  camera. Decided to document it as a known limitation in README.md
+  rather than record a supplementary clip.
+* Full suite: 240 tests passing (no code changed).
+
+## Day 24
+
+Official task: write final README with instructions and examples.
+
+* Added a "Demo" section to README.md: live URL, demo video link, and
+  the NLTK cold-start known limitation (see Day 23).
+* Updated the Progress section: added the Day 23 entry, and changed
+  "Planned next" to point at submitting the project on CodeZoner.
+* Full suite: 240 tests passing (docs only, no code changed).

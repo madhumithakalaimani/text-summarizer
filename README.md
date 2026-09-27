@@ -13,6 +13,15 @@ The goal of this project is to develop a text summarization system that can conv
 * Evaluate the quality and usefulness of the generated summaries.
 
 
+## Demo
+
+Live site: https://text-summarizer-9e4x.onrender.com
+
+Demo video: https://drive.google.com/file/d/1-6bahxB7SJLNVwM0o4AeHK4E8Oqwiqrz/view?usp=sharing (~67s, shows a successful summary and the validation error message on the live site).
+
+Known limitation: the first request after the server has been idle takes longer while NLTK data and models warm up. This warm-up was not captured in the demo video, which started with the server already warm; see PROJECT_LOG.md (Day 17) for the original finding.
+
+
 ## Installation
 
 Python 3.13 was used for development. From the project folder:
@@ -222,7 +231,8 @@ Done so far:
 * Logging and monitoring (Day 20): added `summarizer/logging_config.py` with `setup_logging()` (rotating file handler at `logs/app.log`, 1MB per file, 3 backups, plus a console handler). `app.py` now logs health checks and timed summarize calls (input character count, elapsed milliseconds, success or failure). See `tests/test_logging.py`.
 * Documentation backfill (Day 21): `PROJECT_LOG.md` fully backfilled through Day 20.
 * Deployment (Day 22): deployed to Render (free tier), at https://render.com. Live at https://text-summarizer-9e4x.onrender.com. `app.py` now binds to `0.0.0.0` and reads `PORT` from the environment; `gunicorn` was added to `requirements.txt` as the production WSGI server, and `render.yaml` documents the build/start commands.
+* Demo video (Day 23): recorded a ~67s screen-capture demo of the live site (a successful summary and the validation error message), uploaded to Google Drive with a shareable "Anyone with the link / Viewer" link (see "Demo" section above). The recording started with the server already warm, so the NLTK cold-start delay noted in Day 17 user testing was not captured on camera; it is documented as a known limitation in the "Demo" section instead.
 
 Planned next:
 
-* Record the demo video (note the NLTK warm-up delay from Day 17 user testing).
+* Submit the project on CodeZoner's "Submit Project" form.
