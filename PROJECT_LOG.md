@@ -242,3 +242,19 @@ Official task: write final README with instructions and examples.
 * Updated the Progress section: added the Day 23 entry, and changed
   "Planned next" to point at submitting the project on CodeZoner.
 * Full suite: 240 tests passing (docs only, no code changed).
+
+## Day 27
+
+Official task: clean up portfolio and ensure consistency across all projects.
+
+* Added an H1 title ("# Text Summarizer") to the top of README.md, matching
+  the H1 convention already used in PROJECT_LOG.md.
+* Added a LICENSE file (MIT, 2026, Madhumitha Kalaimani) - the repo had no
+  license file before this.
+* Full suite: 240 tests passing (docs only, no code changed).
+* Note: this work was pushed as commit c34ee71 with the message "Day 25:
+  add README title, LICENSE file for portfolio consistency" - that label
+  is a mistake carried over from miscounting internship days; the work
+  described in that commit is this Day 27 task, not Day 25. Recording the
+  correct day here since the commit message itself was not amended (no
+  force-push, per project rules).
