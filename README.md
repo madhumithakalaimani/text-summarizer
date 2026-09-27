@@ -1,3 +1,5 @@
+# Text Summarizer
+
 ## Project Goals
 
 The goal of this project is to develop a text summarization system that can convert lengthy text into concise and meaningful summaries while preserving the important information.
