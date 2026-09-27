@@ -38,23 +38,44 @@ End of Week 1: 129 tests passing.
 * A short line ending in a colon or an ellipsis, followed by a capitalized line, is treated as a headline.
 * Small polish: type hints in validation.py, long lines, csv.field_size_limit set on every call, and _pick returns an empty first match even if a later column has text.
 
-## Known gap
+## Day 8
 
-* Days 8-12 were completed (Streamlit demo, Flask API, error handling,
-  dataset slice, deployment) but not logged here day-by-day yet. To be
-  backfilled from git log.
+Official task: (Week 2 plan) explicit TextRank configuration and algorithm tests.
 
-## Week 2 plan (tentative, to be adjusted to the official task list)
+* Made TextRank settings explicit rather than relying on library defaults,
+  and added dedicated algorithm tests to lock in expected behavior
+  (commit a758ee8).
 
-Goal: a working online demo and a demo video.
+## Day 9
 
-* Day 8: install Streamlit and build a small app on summarize_text and summarize_path; add streamlit to requirements.txt.
-* Day 9: clear error when the NLTK download fails; test for tie order; minimum token count in the frequency method.
-* Day 10: argparse for the command line; document the folder and file failure behavior.
-* Day 11: add a small public dataset slice (BBC News or CNN/DailyMail) with source and license documented, and check the summaries on it.
-* Day 12: deploy the app on a free host and test it there.
-* Day 13: record the demo video and add the demo URL to the README.
-* Day 14: Week 2 review and final checks.
+Official task: (Week 2 plan) handle larger datasets without memory issues.
+
+* Data loader now streams articles one at a time instead of loading a
+  whole dataset into memory at once, so large inputs fit in memory
+  (commit d057bb3).
+
+## Day 10
+
+Official task: (Week 2 plan) expose the summarizer as a web API.
+
+* Added a Flask API (app.py) with a GET /health endpoint and a
+  POST /summarize endpoint, plus tests for both (commit d0eedf3).
+
+## Day 11
+
+Official task: (Week 2 plan) handle missing NLTK data and unexpected errors.
+
+* Added error handling for missing NLTK data (raises a clear NLTKDataError
+  instead of a raw exception) and for unexpected errors more generally
+  (commit 241467d).
+
+## Day 12
+
+Official task: (Week 2 plan) direct unit tests for core algorithm behavior.
+
+* Added tests/test_frequency_algorithm.py and tests/test_summarize_inputs.py,
+  testing the frequency scoring method and summarize() input handling
+  directly rather than only through higher-level tests (commit 6f026b5).
 
 ## Day 13
 
@@ -70,6 +91,13 @@ benchmarking tools.
   ~2.4ms vs ~5.8ms; long: ~11.1ms vs ~39.7ms). TextRank's graph-based
   ranking scales worse with input size than the frequency count.
 * Full suite: 228 tests passing (222 previous + 6 new benchmarks).
+
+## Day 14
+
+Official task: code review and refactor for readability.
+
+* Reviewed the codebase for readability and refactored accordingly
+  (commit 83c96c8).
 
 ## Day 15
 
@@ -143,3 +171,21 @@ Official task: fix reported bugs and improve overall user experience.
   code fix; left for when the demo video is scripted.
 * Full suite: 236 tests passing (no new tests; existing tests only check
   substrings of the changed messages, so no test changes were needed).
+
+## Day 19
+
+Official task: (Week 2 plan, extended) build a frontend for the API.
+
+* Added a Flask-served HTML/CSS/JS frontend (templates/index.html,
+  static/style.css, static/script.js) as a vanilla JS fetch-based UI
+  for /summarize, tested working in the browser (commit 0557a7f).
+
+## Day 20
+
+Official task: add monitoring/observability to the running service.
+
+* Added summarizer/logging_config.py with setup_logging(): a rotating
+  file handler (logs/app.log, 1MB, 3 backups) plus a console handler.
+* app.py now logs health checks and timed summarize success/failure,
+  including input_chars and elapsed_ms (commit dd17556).
+* Added tests/test_logging.py.
