@@ -189,3 +189,31 @@ Official task: add monitoring/observability to the running service.
 * app.py now logs health checks and timed summarize success/failure,
   including input_chars and elapsed_ms (commit dd17556).
 * Added tests/test_logging.py.
+
+## Day 22
+
+Official task: deploy the text summarizer to production using a cloud
+platform (task text named AWS or Google Cloud as examples).
+
+* Chose Render (free tier, no card required) over AWS/GCP: a full AWS or
+  GCP setup (IAM, billing account, CLI) was disproportionate for a
+  single Flask demo app, and free-tier GCP/AWS still require a card on
+  file even when usage stays free.
+* app.py: host changed from 127.0.0.1 to 0.0.0.0 so the process accepts
+  external connections (commit 1dc1cc0).
+* requirements.txt: added gunicorn as the production WSGI server
+  (Flask's dev server is not for production use) (commit 1dc1cc0).
+* Added render.yaml documenting the build command
+  (pip install -r requirements.txt) and start command
+  (gunicorn app:app --bind 0.0.0.0:$PORT) (commit 1dc1cc0).
+* Deployed via Render dashboard, connected to the GitHub repo, plan set
+  to Free. Live at https://text-summarizer-9e4x.onrender.com.
+* Verified in production: homepage loads, /health returns
+  {"status": "ok"}, and /summarize correctly returns a 3-sentence
+  frequency summary for a test paragraph.
+* Updated README.md: test count corrected to 240, added Progress entries
+  for Days 19-22, added deployment info, updated "Planned next" to
+  reference recording the demo video instead of the superseded
+  Streamlit-demo plan.
+* Full suite: 240 tests passing (no test changes needed; deployment
+  config and docs only).
