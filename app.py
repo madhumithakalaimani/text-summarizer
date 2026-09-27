@@ -9,7 +9,7 @@ Endpoints:
 import json
 import os
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
 from werkzeug.exceptions import HTTPException
 
 from summarizer.pipeline import summarize_text
@@ -33,6 +33,10 @@ def create_app():
     """Build the Flask app (a factory, so tests get a fresh one)."""
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = MAX_REQUEST_BYTES
+
+    @app.get("/")
+    def index():
+        return render_template("index.html")
 
     @app.get("/health")
     def health():

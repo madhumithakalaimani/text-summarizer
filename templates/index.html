@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="ascii">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Text Summarizer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <h1>Text Summarizer</h1>
+    <p class="subtitle">Paste text below and get a quick summary.</p>
+
+    <form id="summarize-form">
+      <textarea id="text-input" rows="10" placeholder="Paste your text here..." required></textarea>
+
+      <div class="controls">
+        <label for="method-select">Method
+          <select id="method-select">
+            <option value="frequency">Frequency</option>
+            <option value="textrank">TextRank</option>
+          </select>
+        </label>
+
+        <label for="sentences-input">Sentences
+          <input type="number" id="sentences-input" min="1" max="20" value="3">
+        </label>
+
+        <button type="submit" id="submit-btn">Summarize</button>
+      </div>
+    </form>
+
+    <div id="status" class="status" hidden></div>
+
+    <section id="result" class="result" hidden>
+      <h2>Summary</h2>
+      <p id="summary-text"></p>
+      <div class="stats">
+        <span id="word-stats"></span>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
