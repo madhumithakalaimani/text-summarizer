@@ -27,7 +27,8 @@ def validate_text(
     word_count = len(cleaned.split())
     if word_count < min_words:
         raise InvalidInputError(
-            f"Text is too short ({word_count} words; minimum is {min_words})."
+            f"Text is too short ({word_count} words; minimum is {min_words}). "
+            f"Add more text and try again."
         )
     return cleaned
 

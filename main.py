@@ -23,45 +23,60 @@ def _use_utf8_output() -> None:
             reconfigure(encoding="utf-8")
 
 
-def _print_result(result, show_header: bool) -> int:
-    """Print one result. Returns 1 if the article was skipped, else 0."""
-    if not result.ok:
-        print(
-            f"Skipped {result.source} #{result.article_id}: {result.error}",
-            file=sys.stderr,
-            flush=True,
-        )
-        return 1
+def _print_summary(result, show_header: bool) -> None:
+    """Print one successful result's summary (with an optional header)."""
     if show_header:
         print(f"=== {result.title or result.article_id} ({result.source}) ===")
     print(result.summary)
     if show_header:
         print()
     sys.stdout.flush()
-    return 0
+
+
+def _print_skipped(skipped) -> None:
+    """Print all skipped articles together, grouped at the end, so a user
+    scanning for failures does not have to read the whole batch output."""
+    if not skipped:
+        return
+    print("Skipped:", file=sys.stderr, flush=True)
+    for result in skipped:
+        print(
+            f"  {result.source} #{result.article_id}: {result.error}",
+            file=sys.stderr,
+            flush=True,
+        )
 
 
 def _print_results(results) -> int:
-    """Print each result as soon as it is ready. Returns how many were skipped.
+    """Print each summary as soon as it is ready; print all skipped articles
+    together at the end. Returns how many were skipped.
 
-    Headers are shown only when there is more than one article, so one result
-    is held back until the next one arrives. If the reader fails part-way
-    (for example on a bad row), the held-back result is still printed first.
+    Headers on summaries are shown only when there is more than one article
+    overall, so one result is held back until the next one arrives. If the
+    reader fails part-way (for example on a bad row), the held-back result is
+    still handled first.
     """
-    failed = 0
+    skipped = []
     pending = None
     several = False
+
+    def handle(result, show_header: bool) -> None:
+        if not result.ok:
+            skipped.append(result)
+        else:
+            _print_summary(result, show_header)
+
     try:
         for result in results:
             if pending is not None:
                 several = True
-                failed += _print_result(pending, several)
+                handle(pending, several)
             pending = result
     finally:
-        # Runs on a reader error too, so no finished summary is lost
         if pending is not None:
-            failed += _print_result(pending, several)
-    return failed
+            handle(pending, several)
+        _print_skipped(skipped)
+    return len(skipped)
 
 
 def main() -> None:

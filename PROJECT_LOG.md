@@ -124,3 +124,22 @@ summarizer.
   successful summaries; first request has a noticeable NLTK warm-up
   delay worth flagging in the demo video.
 * Full suite: 236 tests passing (no change, no code touched).
+
+## Day 18
+
+Official task: fix reported bugs and improve overall user experience.
+
+* Addressed backlog item 1 from docs/day17_user_testing.md: the
+  short-input error message in summarizer/validation.py now suggests a
+  next step ("Add more text and try again.") in addition to reporting
+  the word count and minimum.
+* Addressed backlog item 2: main.py's batch (folder) output now prints
+  all "Skipped" lines together at the end, after the summaries, instead
+  of interleaving them with successful results. Refactored
+  _print_result/_print_results into _print_summary, _print_skipped, and
+  a slimmer _print_results that collects skipped results and prints them
+  as a group.
+* Backlog item 3 (NLTK warm-up delay) is a demo-video script note, not a
+  code fix; left for when the demo video is scripted.
+* Full suite: 236 tests passing (no new tests; existing tests only check
+  substrings of the changed messages, so no test changes were needed).
